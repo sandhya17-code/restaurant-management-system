@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin-top: 0;
+            padding: 0;
+        }
+
+        .register-container {
+            max-width: 550px;
+            margin: 80px auto;
+            background: #fff;
+            padding: 25px;
+            padding-right: 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #b13a3a;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+        }
+
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input[type="submit"]:hover {
+            background: #4648d1;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .back-link button {
+            background: #28a745;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .back-link button:hover {
+            background: #1e7e34;
+        }
+        .messages {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .messages p {
+            color: red;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>Registration</h2>
+        <form method="POST" action="">
+            {% csrf_token %}
+            <input type="text" name="first_name" placeholder="Enter First name" required><br>
+            <input type="text" name="last_name" placeholder="Enter Last name" required><br>
+            <input type="text" name="username" placeholder="Enter username" required><br>
+            <input type="email" name="email" placeholder="Enter Email" required><br>
+            <input type="text" name="address" placeholder="Enter Address" required><br>
+            <input type="password" name="password1" placeholder="Enter Password" required><br>
+            <input type="password" name="password2" placeholder="Confirm Password" required><br><br>
+            <input type="submit" value="Register">
+            <div class="back-link">
+                <a href="{% url 'home' %}">
+                    <button type="button">Go Back</button>
+                </a>
+            </div>
+        </form>
+
+        <div class="messages">
+            {% if message %}
+                <p>{{ message }}</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

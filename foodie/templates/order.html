@@ -1,0 +1,221 @@
+<html>
+  <head>
+    <title>Order Summary</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #444;
+      }
+
+      #details {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+      }
+
+      #couponSection {
+        margin: 20px 0;
+        text-align: center;
+      }
+
+      #couponSection input {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      #couponSection button {
+        padding: 8px 12px;
+        margin-left: 8px;
+        background: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #couponSection button:hover {
+        background: #0056b3;
+      }
+
+      .button1 {
+        background-color: green;
+        color: #fff;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .button2 {
+        background-color: red;
+        color: #fff;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      a button {
+        background: #ff6600;
+        color: #fff;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      a button:hover {
+        background: #cc5200;
+      }
+
+      .message {
+        display: none;
+        margin: 15px auto;
+        padding: 12px;
+        border-radius: 6px;
+        text-align: center;
+        max-width: 500px;
+      }
+
+      .success {
+        background: #28a745;
+        color: #fff;
+      }
+
+      .error {
+        background: #dc3545;
+        color: #fff;
+      }
+
+      .info {
+        background: #17a2b8;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Your Orders</h2>
+    <div id="details"></div>
+     <p>Debug Order ID: {{ latest_order_id|default:"NO ID PASSED" }}</p>
+    <div id="couponSection">
+      <label for="coupon">Enter Coupon Code:</label>
+      <input type="text" id="coupon" placeholder="Enter code">
+      <button id="applyCoupon">Apply</button>
+    </div>
+
+    <!-- Message area -->
+    <div id="messageBox" class="message"></div>
+
+    <form method="POST" action="{% url 'place_order' %}" id="orderForm">
+      {% csrf_token %}
+      <div id="hiddenInputs"></div>
+      <button class="button1" id="placeOrder">Place Order</button>
+    </form>
+    <br><br>
+    <a href="{% url 'home' %}">
+      <button type="button">Go To Home</button>
+    </a>
+
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <script>
+      let hiddenInputs = document.getElementById("hiddenInputs")  
+      let offers = JSON.parse('{{ offers_json|escapejs }}');
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      let subtotal = Number(0);
+      let details = document.getElementById("details");
+      let messageBox = document.getElementById("messageBox");
+
+      cart.forEach(item =>{
+          let price = Number(item.price);
+          let qty = Number(item.qty);
+          let linetotal = price * qty;
+          details.innerHTML += item.name + " (x" + qty + ") - ₹"+linetotal + "<br>";
+          subtotal += linetotal;
+
+          // Add hidden inputs for backend
+          hiddenInputs.innerHTML +=`
+          <input type="hidden" name="dish_ids" value="${item.id}">
+          <input type="hidden" name="quantities" value="${qty}">
+          `;
+      });
+
+      let gst = Number(12);
+      let total = subtotal + gst;
+
+      details.innerHTML += "<hr>";
+      details.innerHTML += "Subtotal: ₹"+ subtotal +"<br>";
+      details.innerHTML += "GST: ₹"+ gst +"<br>";
+      details.innerHTML +="<b>Total: ₹"+ total +"</b><br>";
+      details.innerHTML += "Payment: Cash on Delivery (Only)<br><br>";
+
+      // Show message helper
+      function showMessage(text, type) {
+        messageBox.innerText = text;
+        messageBox.className = "message " + type;
+        messageBox.style.display = "block";
+      }
+
+      document.getElementById("applyCoupon").addEventListener("click",function(){
+          let code = document.getElementById("coupon").value.trim().toUpperCase();
+          let offer = offers.find(o => o.code.toUpperCase()=== code);
+
+          if(offer){
+              let percentage = offer.percentage;
+              let discountRate = percentage / 100 ;
+              let discountAmount = subtotal * discountRate;
+              let discountedTotal = (subtotal - discountAmount) + gst;
+
+              details.innerHTML += "Discount Applied ("+ code + "): ₹" + discountAmount + "<br>"; 
+              details.innerHTML +="<b>Now Amount to be paid is ₹"+ discountedTotal +"</b><br>";
+              document.getElementById("couponSection").style.display ="none";
+
+              showMessage("Coupon applied successfully!", "success");
+          } else {
+              showMessage("Invalid coupon code!", "error");
+          }
+      });
+
+      
+      // Place Order stays the same
+document.getElementById("placeOrder").addEventListener("click", function(e) {
+    e.preventDefault();
+    let form = document.getElementById("orderForm");
+    let formData = new FormData(form);
+
+    fetch(form.action, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            showMessage("Order successfully placed! Receiver Name: {{Receiver_name}}, Receiver Address: {{Receiver_address}}", "success");
+            document.getElementById("placeOrder").style.display="none";
+        } else {
+            showMessage("Something went wrong placing the order.", "error");
+        }
+    })
+    .catch(() => {
+        showMessage("Network error while placing order.", "error");
+    });
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+<h2>All Offers</h2>
+<ul>
+  {% for offer in offers %}
+    <li>{{ offer.name }} - {{ offer.percentage }}% (Code: {{ offer.code }})</li>
+  {% endfor %}
+</ul>
